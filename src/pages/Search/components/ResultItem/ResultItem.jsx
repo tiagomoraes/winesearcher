@@ -3,9 +3,7 @@ import { Container, Label, LabelTitle } from './ResultItem.styles';
 
 const ResultItem = ({ item, docID }) => {
   const handleClick = () => {
-    if (item?.url) {
-      window.location.href = item.url;
-    }
+    window.location.href = `http://localhost:8000/static/${docID}.html`;
   };
 
   const getTitle = (key) => {
@@ -31,7 +29,7 @@ const ResultItem = ({ item, docID }) => {
     <Container
       onClick={handleClick}
       title={`#${docID} - ${item.name}`}
-      hoverable={item.url}
+      hoverable
     >
       {Object.entries(item).map(([key, value]) => {
         const title = getTitle(key);
