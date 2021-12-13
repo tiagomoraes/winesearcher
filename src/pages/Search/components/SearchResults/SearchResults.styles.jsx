@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { Pagination } from 'antd';
 
 export const Container = styled.div`
   width: 100%;
@@ -22,4 +23,9 @@ export const Content = styled.div`
   align-items: center;
 
   flex-wrap: wrap;
+`;
+
+export const PageSelector = styled(Pagination)`
+  margin: 0 auto;
+  padding-top: 50px;
 `;

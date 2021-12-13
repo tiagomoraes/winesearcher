@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Input, Select } from 'antd';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Select, Input } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import queryString from 'query-string';
 
-import { Container } from './SearchBar.styles';
+import api from '@services/api';
+import { Container, Suggestions } from './SearchBar.styles';
 
 const { Option } = Select;
 
@@ -11,8 +12,11 @@ const SearchBar = () => {
   const { search } = useLocation();
   const navigate = useNavigate();
 
+  const input = useRef(null);
+
   const [query, setQuery] = useState();
   const [field, setField] = useState('name');
+  const [options, setOptions] = useState([]);
 
   useEffect(() => {
     const queryObject = queryString.parse(search);
@@ -20,19 +24,56 @@ const SearchBar = () => {
     setField(queryObject.field || 'name');
   }, [search]);
 
-  const handleQueryInputChange = (e) => {
-    setQuery(e.target.value);
+  const fetchOptions = useCallback(async () => {
+    if (field === 'alcohol_content') {
+      setOptions([
+        { label: '0% - 5%', value: 0 },
+        { label: '5% - 10%', value: 1 },
+        { label: '10% - 15%', value: 2 },
+        { label: '+15%', value: 3 },
+      ]);
+
+      return;
+    }
+
+    const { data } = await api.get('/suggestions/', {
+      params: {
+        query,
+        field,
+      },
+    });
+
+    setOptions(data.map((o) => ({ label: o, value: o })));
+  }, [field, query]);
+
+  useEffect(() => {
+    if (query) {
+      fetchOptions();
+    }
+  }, [fetchOptions, query]);
+
+  const handleQueryInputChange = (value) => {
+    setQuery(value);
   };
 
   const handleTypeInputChange = (e) => {
     setField(e);
+    setQuery('');
+    fetchOptions();
   };
 
-  const handleSearch = () => {
+  const performSearch = (q = query, f = field) => {
+    if (!query) {
+      return;
+    }
+
     const queryParams = {
-      query,
-      field: field || 'name',
+      query: q,
+      field: f || 'name',
+      page: 1,
     };
+
+    input.current?.blur();
 
     navigate({
       pathname: '/search',
@@ -40,28 +81,38 @@ const SearchBar = () => {
     });
   };
 
-  const selectAfter = (
-    <Select
-      onChange={handleTypeInputChange}
-      value={field}
-      className="select-after"
-    >
-      <Option value="name">Nome</Option>
-      <Option value="grape">Uva</Option>
-      <Option value="country">País</Option>
-      <Option value="alcohol_content">Teor Alcoólico</Option>
-      <Option value="wine_type">Tipo</Option>
-    </Select>
-  );
+  const handleSearch = () => {
+    performSearch();
+  };
+
+  const handleSelect = (value) => {
+    setQuery(value);
+    performSearch(value, field);
+  };
 
   return (
     <Container>
-      <Input
+      <Select onChange={handleTypeInputChange} value={field}>
+        <Option value="name">Nome</Option>
+        <Option value="grape">Uva</Option>
+        <Option value="country">País</Option>
+        <Option value="alcohol_content">Teor Alcoólico</Option>
+        <Option value="wine_type">Tipo</Option>
+      </Select>
+      <Suggestions
+        onSelect={handleSelect}
+        options={options}
         value={query}
+        dropdownMatchSelectWidth={300}
         onChange={handleQueryInputChange}
-        onPressEnter={handleSearch}
-        addonAfter={selectAfter}
-      />
+      >
+        <Input.Search
+          ref={input}
+          onSearch={handleSearch}
+          placeholder="input here"
+          enterButton
+        />
+      </Suggestions>
     </Container>
   );
 };

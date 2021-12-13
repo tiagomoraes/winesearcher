@@ -43,7 +43,6 @@ export const Title = styled.h1`
 `;
 
 export const InputContainer = styled.div`
-  width: 400px;
   margin-left: 40px;
 `;
 

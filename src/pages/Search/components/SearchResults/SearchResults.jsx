@@ -1,14 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import queryString from 'query-string';
 import api from '@services/api';
 import ResultItem from '../ResultItem';
-import { Count, Container, Content } from './SearchResults.styles';
+import {
+  Count,
+  Container,
+  Content,
+  PageSelector,
+} from './SearchResults.styles';
 
 const SearchResults = () => {
+  const PAGE_SIZE = 10;
+
   const { search } = useLocation();
+  const navigate = useNavigate();
   const [results, setResults] = useState();
   const [total, setTotal] = useState();
+  const [page, setPage] = useState();
   const [status, setStatus] = useState('loading');
 
   const fetchData = useCallback(async () => {
@@ -16,6 +25,9 @@ const SearchResults = () => {
 
     try {
       const query = queryString.parse(search);
+      query.page_size = PAGE_SIZE;
+
+      setPage(query.page || 1);
 
       const { data } = await api.get('/search/', {
         params: query,
@@ -34,12 +46,28 @@ const SearchResults = () => {
     fetchData();
   }, [fetchData, search]);
 
+  const handlePageChange = (p) => {
+    if (!search) {
+      return;
+    }
+
+    const params = {
+      ...queryString.parse(search),
+      page: p.toString(),
+    };
+
+    navigate({
+      pathname: '/search',
+      search: queryString.stringify(params),
+    });
+  };
+
   if (status === 'loading') {
     return <div>Carregando...</div>;
   }
 
   if (status === 'error') {
-    return <div>Deu um Erro</div>;
+    return <div>Deu um Erro, meu chapa</div>;
   }
 
   if (Object.values(results).length === 0) {
@@ -48,12 +76,22 @@ const SearchResults = () => {
 
   return (
     <Container>
-      <Count>Mostrando 1-10 de {total} resultados</Count>
+      <Count>
+        Mostrando {(page - 1) * PAGE_SIZE + 1} -{' '}
+        {Math.min(page * PAGE_SIZE, total)} de {total} resultados
+      </Count>
       <Content>
         {Object.entries(results).map((e) => (
           <ResultItem key={e[0]} docID={e[0]} item={e[1]} />
         ))}
       </Content>
+      <PageSelector
+        onChange={handlePageChange}
+        current={Number(page)}
+        pageSize={PAGE_SIZE}
+        pageSizeOptions={[PAGE_SIZE]}
+        total={total}
+      />
     </Container>
   );
 };
