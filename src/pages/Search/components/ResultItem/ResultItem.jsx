@@ -26,11 +26,7 @@ const ResultItem = ({ item, docID }) => {
   };
 
   return (
-    <Container
-      onClick={handleClick}
-      title={`#${docID} - ${item.name}`}
-      hoverable
-    >
+    <Container onClick={handleClick} title={item.name} hoverable>
       {Object.entries(item).map(([key, value]) => {
         const title = getTitle(key);
 
